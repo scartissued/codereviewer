@@ -17,6 +17,14 @@ const parseNodeEnv = (value: string | undefined): NodeEnv => {
   return 'development';
 };
 
+const parseOptionalString = (value: string | undefined): string => {
+  if (!value || !value.trim()) {
+    return '';
+  }
+
+  return value.trim();
+};
+
 const parseCorsOrigins = (value: string | undefined): true | string[] => {
   if (!value || value.trim() === '*') {
     return true;
@@ -34,4 +42,14 @@ export const env = {
   corsOrigins: parseCorsOrigins(process.env.CORS_ORIGINS),
   rateLimitMax: parseNumber(process.env.RATE_LIMIT_MAX, 100),
   trustProxy: process.env.TRUST_PROXY === 'true',
+  githubAppId: parseNumber(process.env.GITHUB_APP_ID, 0),
+  githubClientId: parseOptionalString(process.env.GITHUB_CLIENT_ID),
+  githubClientSecret: parseOptionalString(process.env.GITHUB_CLIENT_SECRET),
+  githubWebhookSecret: parseOptionalString(process.env.GITHUB_WEBHOOK_SECRET),
+  githubPrivateKey: parseOptionalString(process.env.GITHUB_PRIVATE_KEY).replace(/\\n/g, '\n'),
+  githubRedirectUrl: parseOptionalString(process.env.GITHUB_REDIRECT_URL),
+  githubEnabled:
+    parseNumber(process.env.GITHUB_APP_ID, 0) > 0 &&
+    parseOptionalString(process.env.GITHUB_WEBHOOK_SECRET) !== '' &&
+    parseOptionalString(process.env.GITHUB_PRIVATE_KEY) !== '',
 } as const;

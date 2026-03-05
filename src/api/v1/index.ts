@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { healthRoutes } from '../../routes/health.routes';
-import { reviewRoutes } from '../../routes/review.routes';
+import { healthRoutes } from '../../routes/health.routes.js';
+import { reviewRoutes } from '../../routes/review.routes.js';
 
 export const v1Router = Router();
 

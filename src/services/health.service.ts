@@ -1,4 +1,4 @@
-import { HealthStatus } from '../models/health.model';
+import { HealthStatus } from '../models/health.model.js';
 
 export const getHealthStatus = (): HealthStatus => ({
   service: 'codereviewer',
