@@ -1,5 +1,5 @@
 import { ErrorRequestHandler, Request, Response } from 'express';
-import { env } from '../config/env';
+import { env } from '../config/env.js';
 
 export const notFoundHandler = (req: Request, res: Response): void => {
   res.status(404).json({
