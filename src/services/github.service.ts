@@ -1,5 +1,6 @@
 import { App } from '@octokit/app';
 import { env } from '../config/env.js';
+import { generateText } from 'ai';
 
 export async function createGitHubApp() {
   const githubApp = new App({
@@ -50,6 +51,28 @@ export async function createGitHubApp() {
     );
 
     // TODO: AI logic goes here
+
+
+    const diffText = files
+      .filter((f) => f.patch)
+      .map((f) => `File: ${f.filename}\n${f.patch}`)
+      .join('\n\n');
+
+    const prompt = `Review this PR diff and return:
+      - summary
+      - findings (severity, file, line, message, suggestion)
+      DIFF: ${diffText}`;
+
+    const { text } = await generateText({
+      model: 'openai/gpt-5',
+      prompt,
+      temperature: 0.1,
+      maxOutputTokens: 1200,
+      abortSignal: AbortSignal.timeout(25_000),
+    });
+
+    console.log(text);
+
   });
 
   githubApp.webhooks.onError((error) => {
