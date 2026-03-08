@@ -50,8 +50,22 @@ app.use((req: Request, res: Response, next) => {
   next();
 });
 
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+const jsonParser = express.json({ limit: '1mb' });
+const urlEncodedParser = express.urlencoded({ extended: true, limit: '1mb' });
+
+app.use((req: Request, res: Response, next) => {
+  if (req.path === '/api/v1/github/webhooks') {
+    return next();
+  }
+  return jsonParser(req, res, next);
+});
+
+app.use((req: Request, res: Response, next) => {
+  if (req.path === '/api/v1/github/webhooks') {
+    return next();
+  }
+  return urlEncodedParser(req, res, next);
+});
 
 app.get('/healthz', (_req: Request, res: Response) => {
   res.status(200).json({
