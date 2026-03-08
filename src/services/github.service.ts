@@ -2,6 +2,57 @@ import { App } from '@octokit/app';
 import { env } from '../config/env.js';
 import { generateText } from 'ai';
 
+type PullRequestPayload = {
+  action: string;
+  repository: { owner: { login: string }; name: string };
+  pull_request: { number: number; user: { login: string } };
+};
+
+async function runPullRequestAnalysis(
+  octokit: { request: (route: string, params: Record<string, unknown>) => Promise<{ data: Array<{ filename: string; patch?: string }> }> },
+  payload: PullRequestPayload,
+): Promise<void> {
+  const { pull_request, repository } = payload;
+  const owner = repository.owner.login;
+  const repo = repository.name;
+  const prNumber = pull_request.number;
+
+  console.log(
+    `[analysis:start] action=${payload.action} pr=${prNumber} repo=${owner}/${repo}`,
+  );
+
+  const { data: files } = await octokit.request(
+    'GET /repos/{owner}/{repo}/pulls/{pull_number}/files',
+    { owner, repo, pull_number: prNumber },
+  );
+
+  console.log(
+    `[analysis:files] pr=${prNumber} changed=${files.length}`,
+    files.map((f) => f.filename),
+  );
+
+  const diffText = files
+    .filter((f) => f.patch)
+    .map((f) => `File: ${f.filename}\n${f.patch}`)
+    .join('\n\n');
+
+  const prompt = `Review this PR diff and return:
+      - summary
+      - findings (severity, file, line, message, suggestion)
+      DIFF: ${diffText}`;
+
+  const { text } = await generateText({
+    model: 'openai/gpt-5',
+    prompt,
+    temperature: 0.1,
+    maxOutputTokens: 1200,
+    abortSignal: AbortSignal.timeout(25_000),
+  });
+
+  console.log(`[analysis:done] pr=${prNumber}`);
+  console.log(text);
+}
+
 export async function createGitHubApp() {
   const githubApp = new App({
     appId: env.githubAppId,
@@ -18,8 +69,7 @@ export async function createGitHubApp() {
 
   const { data } = await githubApp.octokit.request('/app');
   console.log(`GitHub App authenticated as '${data.name}'`);
-
-  console.log('Data: ', data)
+  console.log('Data: ', data);
 
   githubApp.webhooks.on('installation.created', ({ payload }) => {
     const { installation, sender } = payload;
@@ -32,76 +82,49 @@ export async function createGitHubApp() {
     );
   });
 
-   githubApp.webhooks.on('pull_request', ({ payload }) => {
-    githubApp.log.debug('Confirming webhook event')
+  githubApp.webhooks.on('pull_request', ({ payload }) => {
+    console.log(
+      `[pull_request] action=${payload.action} #${payload.pull_request.number}`,
+    );
+  });
+
+  githubApp.webhooks.on('push', ({ payload }) => {
+    console.log(
+      `[push] ${payload.repository.full_name} by ${payload.pusher.name}`,
+    );
+  });
+
+  githubApp.webhooks.on('pull_request.synchronize', ({ payload }) => {
+    console.log(
+      `[pull_request] action=${payload.action} #${payload.pull_request.number}`,
+    );
+  });
+
+  githubApp.webhooks.on('pull_request.edited', ({ payload }) => {
     console.log(`[pull_request] action=${payload.action} #${payload.pull_request.number}`);
   });
 
-  githubApp.webhooks.on('pull_request.opened', async ({ octokit, payload }) => {
+  githubApp.webhooks.on('pull_request.opened', ({ octokit, payload }) => {
     const { pull_request, repository } = payload;
-    const owner = repository.owner.login;
-    const repo = repository.name;
-    const prNumber = pull_request.number;
-
     console.log(
-      `PR #${prNumber} opened on ${owner}/${repo} by ${pull_request.user.login}`,
+      `PR #${pull_request.number} opened on ${repository.owner.login}/${repository.name} by ${pull_request.user.login}`,
     );
 
-    const { data: files } = await octokit.request(
-      'GET /repos/{owner}/{repo}/pulls/{pull_number}/files',
-      { owner, repo, pull_number: prNumber },
-    );
-
-    console.log(
-      `Changed files (${files.length}):`,
-      files.map((f: { filename: string }) => f.filename),
-    );
-
-    // TODO: AI logic goes here
-
-
-    const diffText = files
-      .filter((f) => f.patch)
-      .map((f) => `File: ${f.filename}\n${f.patch}`)
-      .join('\n\n');
-
-    const prompt = `Review this PR diff and return:
-      - summary
-      - findings (severity, file, line, message, suggestion)
-      DIFF: ${diffText}`;
-
-    const { text } = await generateText({
-      model: 'openai/gpt-5',
-      prompt,
-      temperature: 0.1,
-      maxOutputTokens: 1200,
-      abortSignal: AbortSignal.timeout(25_000),
+    // Run heavy work in the background so webhook acknowledgement is fast.
+    void runPullRequestAnalysis(
+      octokit as {
+        request: (
+          route: string,
+          params: Record<string, unknown>,
+        ) => Promise<{ data: Array<{ filename: string; patch?: string }> }>;
+      },
+      payload as PullRequestPayload,
+    ).catch((error: unknown) => {
+      console.error(
+        `[analysis:error] pr=${payload.pull_request.number}`,
+        error,
+      );
     });
-
-    console.log(text);
-
-  });
-
-  githubApp.webhooks.on('pull_request.edited', async ({ octokit, payload }) => {
-    const { pull_request, repository } = payload;
-    const owner = repository.owner.login;
-    const repo = repository.name;
-    const prNumber = pull_request.number;
-
-    console.log(
-      `PR #${prNumber} opened on ${owner}/${repo} by ${pull_request.user.login}`,
-    );
-
-    const { data: files } = await octokit.request(
-      'GET /repos/{owner}/{repo}/pulls/{pull_number}/files',
-      { owner, repo, pull_number: prNumber },
-    );
-
-    console.log(
-      `Changed files (${files.length}):`,
-      files.map((f: { filename: string }) => f.filename),
-    );
-
   });
 
   githubApp.webhooks.onAny(({ id, name, payload }) => {
@@ -110,12 +133,6 @@ export async function createGitHubApp() {
       : undefined;
 
     console.log(`[webhook] id=${id} name=${name} action=${action ?? 'n/a'}`);
-  });
-
- 
-  githubApp.webhooks.on('pull_request.synchronize', ({ payload }) => {
-    console.log('List on pull request')
-    console.log(`[pull_request] action=${payload.action} #${payload.pull_request.number}`);
   });
 
   githubApp.webhooks.onError((error) => {
