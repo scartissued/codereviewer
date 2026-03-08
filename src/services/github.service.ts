@@ -108,6 +108,10 @@ export async function createGitHubApp() {
   githubApp.webhooks.on('pull_request', ({ payload }) => {
     console.log(`[pull_request] action=${payload.action} #${payload.pull_request.number}`);
   });
+  githubApp.webhooks.on('pull_request.synchronize', ({ payload }) => {
+    console.log('List on pull request')
+    console.log(`[pull_request] action=${payload.action} #${payload.pull_request.number}`);
+  });
 
   githubApp.webhooks.onError((error) => {
     if (error.name === 'AggregateError') {
