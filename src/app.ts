@@ -53,6 +53,12 @@ app.use((req: Request, res: Response, next) => {
 const jsonParser = express.json({ limit: '1mb' });
 const urlEncodedParser = express.urlencoded({ extended: true, limit: '1mb' });
 
+/**
+ * this is the worst patch I've ever done in my life.
+// problem: github webhook sometimes/on average takes 9 FREAKING SECONDS TO DELIVER!!!
+ * some other setup considerations {@link https://github.com/orgs/community/discussions/182286}
+ */
+
 app.use((req: Request, res: Response, next) => {
   if (req.path === '/api/v1/github/webhooks') {
     return next();
