@@ -33,7 +33,7 @@ export async function createGitHubApp() {
   });
 
    githubApp.webhooks.on('pull_request', ({ payload }) => {
-    githubApp.log.debug('Confirming webhook event')
+    githubApp.log.debug('Confirming webhook event: ')
     console.log(`[pull_request] action=${payload.action} #${payload.pull_request.number}`);
   });
 
