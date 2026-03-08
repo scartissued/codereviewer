@@ -95,6 +95,8 @@ export async function createGitHubApp() {
       files.map((f: { filename: string }) => f.filename),
     );
 
+    console.log('Add basic comment')
+
   });
 
   githubApp.webhooks.onAny(({ id, name, payload }) => {
