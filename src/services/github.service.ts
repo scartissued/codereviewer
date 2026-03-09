@@ -83,6 +83,7 @@ export async function createGitHubApp() {
 
   githubApp.webhooks.on('pull_request', ({ payload }) => {
     console.log('Generic top level PR webhook')
+    console.log('Random diff')
     console.log(
       `[pull_request] action=${payload.action} #${payload.pull_request.number}`,
     );
