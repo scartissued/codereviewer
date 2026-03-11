@@ -63,7 +63,7 @@ export async function runPullRequestAnalysis(
     prompt,
     temperature: 0.1,
     maxOutputTokens: 1200,
-    abortSignal: AbortSignal.timeout(25_000),
+    abortSignal: AbortSignal.timeout(60_000),
   });
 
   console.log(text);
