@@ -73,6 +73,7 @@ export async function createGitHubApp() {
   });
 
   githubApp.webhooks.onError((error) => {
+    console.log('ON ANY error webhook')
     if (error.name === 'AggregateError') {
       console.error(`Error processing request: ${error.event}`);
       return;
