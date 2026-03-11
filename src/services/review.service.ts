@@ -58,6 +58,8 @@ export async function runPullRequestAnalysis(
       - findings (severity, file, line, message, suggestion)
       DIFF: ${diffText}`;
 
+  console.log('DIFFTEXT: ', diffText)
+
   const { text } = await generateTextFn({
     model: 'openai/gpt-5',
     prompt,
