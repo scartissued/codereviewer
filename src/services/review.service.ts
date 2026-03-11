@@ -55,8 +55,12 @@ export async function runPullRequestAnalysis(
 
   const prompt = `Review this PR diff and return:
       - summary
-      - findings (severity, file, line, message, suggestion)
+      - findings
       DIFF: ${diffText}`;
+
+  // future revision prompt should answer below findings
+  // - findings (severity, file, line, message, suggestion)
+
   
   console.log('DIFFTEXT: ', diffText)
 
@@ -64,7 +68,7 @@ export async function runPullRequestAnalysis(
     model: 'openai/gpt-5',
     prompt,
     temperature: 0.1,
-    maxOutputTokens: 1200,
+    maxOutputTokens: 3000,
     abortSignal: AbortSignal.timeout(60_000),
   });
 
