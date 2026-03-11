@@ -28,6 +28,75 @@ type GenerateTextFn = (options: {
   abortSignal: AbortSignal;
 }) => Promise<{ text: string }>;
 
+const MAX_PATCH_CHARS_PER_FILE = 6_000;
+const MAX_PATCH_CHARS_TOTAL = 24_000;
+const SKIPPED_FILE_PATTERNS = [
+  /\.min\./i,
+  /package-lock\.json$/i,
+  /pnpm-lock\.yaml$/i,
+  /yarn\.lock$/i,
+  /^dist\//i,
+  /^build\//i,
+] as const;
+
+const shouldSkipFile = (filename: string): boolean =>
+  SKIPPED_FILE_PATTERNS.some((pattern) => pattern.test(filename));
+
+function buildBoundedDiff(files: PullRequestFile[]): {
+  diffText: string;
+  includedFiles: number;
+  skippedFiles: number;
+  truncatedFiles: number;
+  totalPatchChars: number;
+} {
+  const sections: string[] = [];
+  let totalChars = 0;
+  let includedFiles = 0;
+  let skippedFiles = 0;
+  let truncatedFiles = 0;
+
+  for (const file of files) {
+    if (!file.patch) {
+      skippedFiles += 1;
+      continue;
+    }
+
+    if (shouldSkipFile(file.filename)) {
+      skippedFiles += 1;
+      continue;
+    }
+
+    if (totalChars >= MAX_PATCH_CHARS_TOTAL) {
+      skippedFiles += 1;
+      continue;
+    }
+
+    let patch = file.patch;
+    if (patch.length > MAX_PATCH_CHARS_PER_FILE) {
+      patch = `${patch.slice(0, MAX_PATCH_CHARS_PER_FILE)}\n... [truncated]`;
+      truncatedFiles += 1;
+    }
+
+    const remaining = MAX_PATCH_CHARS_TOTAL - totalChars;
+    if (patch.length > remaining) {
+      patch = `${patch.slice(0, remaining)}\n... [truncated by total limit]`;
+      truncatedFiles += 1;
+    }
+
+    sections.push(`File: ${file.filename}\n${patch}`);
+    totalChars += patch.length;
+    includedFiles += 1;
+  }
+
+  return {
+    diffText: sections.join('\n\n'),
+    includedFiles,
+    skippedFiles,
+    truncatedFiles,
+    totalPatchChars: totalChars,
+  };
+}
+
 export async function runPullRequestAnalysis(
   octokit: OctokitLike,
   payload: PullRequestPayload,
@@ -48,27 +117,37 @@ export async function runPullRequestAnalysis(
     files.map((f) => f.filename),
   );
 
-  const diffText = files
-    .filter((f) => f.patch)
-    .map((f) => `File: ${f.filename}\n${f.patch}`)
-    .join('\n\n');
+  const {
+    diffText,
+    includedFiles,
+    skippedFiles,
+    truncatedFiles,
+    totalPatchChars,
+  } = buildBoundedDiff(files);
+
+  console.log(
+    `[analysis:diff] pr=${prNumber} included=${includedFiles} skipped=${skippedFiles} truncated=${truncatedFiles} totalPatchChars=${totalPatchChars}`,
+  );
+
+  const truncationNote =
+    skippedFiles > 0 || truncatedFiles > 0
+      ? '\nNote: Partial diff provided due to size/filter limits.'
+      : '';
 
   const prompt = `Review this PR diff and return:
       - summary
       - findings (severity, file, line, message, suggestion)
-      DIFF: ${diffText}`;
-  
-  console.log('DIFFTEXT: ', diffText)
+      DIFF: ${diffText}${truncationNote}`;
 
   const { text } = await generateTextFn({
     model: 'openai/gpt-5',
     prompt,
     temperature: 0.1,
-    maxOutputTokens: 1200,
+    maxOutputTokens: 4000,
     abortSignal: AbortSignal.timeout(60_000),
   });
 
-  console.log('LLM response text:',text);
+  console.log(`LLM response length=${text.length}`);
 }
 
 export async function handlePullRequestEvent(input: {
