@@ -1,6 +1,18 @@
 import { App } from '@octokit/app';
 import { env } from '../config/env.js';
 import {
+  LOG_ANALYSIS_ERROR_PREFIX,
+  LOG_GITHUB_AUTHENTICATED_PREFIX,
+  LOG_GITHUB_EVENT_ERROR_PREFIX,
+  LOG_PR_OPENED_WEBHOOK,
+  LOG_PR_SYNCHRONIZE_WEBHOOK,
+  LOG_SYNC_PR_ERROR,
+  LOG_UNKNOWN_ACCOUNT,
+  WEBHOOK_EVENT_INSTALLATION_CREATED,
+  WEBHOOK_EVENT_PULL_REQUEST_OPENED,
+  WEBHOOK_EVENT_PULL_REQUEST_SYNCHRONIZE,
+} from '../constants/github.constants.js';
+import {
   handlePullRequestEvent,
   PullRequestPayload,
   PullRequestEventType,
@@ -21,13 +33,13 @@ export async function createGitHubApp() {
   });
 
   const { data } = await githubApp.octokit.request('/app');
-  console.log(`GitHub App authenticated as '${data.name}'`);
+  console.log(`${LOG_GITHUB_AUTHENTICATED_PREFIX} '${data.name}'`);
 
-  githubApp.webhooks.on('installation.created', ({ payload }) => {
+  githubApp.webhooks.on(WEBHOOK_EVENT_INSTALLATION_CREATED, ({ payload }) => {
     const { installation, sender } = payload;
     const account = installation.account;
     const accountName =
-      account && 'login' in account ? account.login : 'unknown account';
+      account && 'login' in account ? account.login : LOG_UNKNOWN_ACCOUNT;
     console.log(
       `App installed by ${sender.login} (installation ${installation.id}) ` +
       `on ${accountName}`,
@@ -35,24 +47,21 @@ export async function createGitHubApp() {
   });
 
 
-  githubApp.webhooks.on('pull_request.synchronize', ({ octokit, payload }) => {
-    console.log('PR synchronize webhook')
+  githubApp.webhooks.on(WEBHOOK_EVENT_PULL_REQUEST_SYNCHRONIZE, ({ octokit, payload }) => {
+    console.log(LOG_PR_SYNCHRONIZE_WEBHOOK);
 
     void handlePullRequestEvent({
       octokit,
       payload: payload as PullRequestPayload,
       event: PullRequestEventType.Synchronize,
     }).catch((error: unknown) => {
-      console.error(
-        'Error while synchronizing PR',
-        error,
-      );
+      console.error(LOG_SYNC_PR_ERROR, error);
     });
   });
 
-  githubApp.webhooks.on('pull_request.opened', ({ octokit, payload }) => {
+  githubApp.webhooks.on(WEBHOOK_EVENT_PULL_REQUEST_OPENED, ({ octokit, payload }) => {
     const { pull_request, repository } = payload;
-    console.log('PR opened webhook')
+    console.log(LOG_PR_OPENED_WEBHOOK);
     console.log(
       `PR #${pull_request.number} opened on ${repository.owner.login}/${repository.name} by ${pull_request.user.login}`,
     );
@@ -64,7 +73,7 @@ export async function createGitHubApp() {
       event: PullRequestEventType.Opened,
     }).catch((error: unknown) => {
       console.error(
-        `[analysis:error] pr=${payload.pull_request.number}`,
+        `${LOG_ANALYSIS_ERROR_PREFIX} pr=${payload.pull_request.number}`,
         error,
       );
     });
@@ -72,7 +81,7 @@ export async function createGitHubApp() {
 
   githubApp.webhooks.onError((error) => {
     if (error.name === 'AggregateError') {
-      console.error(`Error processing request: ${error.event}`);
+      console.error(`${LOG_GITHUB_EVENT_ERROR_PREFIX} ${error.event}`);
       return;
     }
     console.error(error);
