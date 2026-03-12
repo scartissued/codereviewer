@@ -47,7 +47,7 @@ type ReviewFinding = {
 
 type ReviewPayload = {
   summary: string[];
-  findings: ReviewFinding[];
+  reviewFindings: ReviewFinding[];
 };
 
 const hasMeaningfulText = (value: string | null | undefined): boolean =>
@@ -69,8 +69,8 @@ const updatePRSummary = async (input: {
   }
 
   const generatedBody = summary.length
-    ? summary.map((line) => `- ${line}`).join('\n')
-    : 'Automated PR summary not available.';
+    ? `## Summary\n${summary.map((line) => `- ${line}`).join('\n')}`
+    : '## Summary\n- Automated PR summary not available.';
 
   const patchPayload: Record<string, unknown> = {
     owner,
@@ -87,14 +87,24 @@ const updatePRSummary = async (input: {
 };
 
 const parseReviewPayload = (raw: string): ReviewPayload => {
-  const parsed = JSON.parse(raw) as Partial<ReviewPayload>;
-  if (!parsed || !Array.isArray(parsed.summary) || !Array.isArray(parsed.findings)) {
+  const parsed = JSON.parse(raw) as {
+    summary?: unknown;
+    reviewFindings?: unknown;
+    findings?: unknown;
+  };
+  const findingsSource = Array.isArray(parsed?.reviewFindings)
+    ? parsed.reviewFindings
+    : Array.isArray(parsed?.findings)
+      ? parsed.findings
+      : undefined;
+
+  if (!parsed || !Array.isArray(parsed.summary) || !Array.isArray(findingsSource)) {
     throw new Error(REVIEW_PARSE_ERROR_MESSAGE);
   }
 
   return {
     summary: parsed.summary.map((item) => String(item)),
-    findings: parsed.findings.map((item) => {
+    reviewFindings: findingsSource.map((item) => {
       const finding = item as Partial<ReviewFinding>;
       return {
         severity:

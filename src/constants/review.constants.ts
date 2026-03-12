@@ -31,7 +31,7 @@ Return ONLY valid JSON, no markdown, no code fences, no explanation.
 JSON schema:
 {
   "summary": string[],
-  "findings": [
+  "reviewFindings": [
     {
       "severity": "low" | "medium" | "high",
       "file": string,
@@ -42,8 +42,11 @@ JSON schema:
   ]
 }
 Rules:
+- "summary" must be neutral and descriptive only:
+  what changed, why, and scope/impact.
+- Do NOT include critique, recommendations in "summary".
 - Keep summary to 2-5 concise bullets.
-- Return at most 10 findings.
-- If no issues, return "findings": [].
+- Return at most 10 review findings in "reviewFindings".
+- If no issues, return "reviewFindings": [].
 DIFF:
 `;
