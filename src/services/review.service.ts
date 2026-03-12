@@ -90,6 +90,8 @@ export async function runPullRequestAnalysis(
 
   // prNumber will be necessary for deduping PRs later on
 
+  console.log('dataa body: ', data)
+
   console.log('PR SUMMARY/DESCRIPTION: ', data.body)
   console.log('PR TITLE: ', data.body)
 
