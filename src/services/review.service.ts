@@ -93,6 +93,8 @@ export async function runPullRequestAnalysis(
   console.log('PR SUMMARY/DESCRIPTION: ', data.body)
   console.log('PR TITLE: ', data.body)
 
+  console.log('DATA shape: ', data)
+
   const diffText = data.files
     .filter((f) => f.patch)
     .map((f) => `File: ${f.filename}\n${f.patch}`)
