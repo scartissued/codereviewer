@@ -100,6 +100,9 @@ export async function runPullRequestAnalysis(
 
   console.log('9990000')
 
+    console.log('--------------------------------------')
+
+
   const diffText = data.files
     .filter((f) => f.patch)
     .map((f) => `File: ${f.filename}\n${f.patch}`)
