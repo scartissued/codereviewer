@@ -1,10 +1,13 @@
 export const REVIEW_FILES_ROUTE = 'GET /repos/{owner}/{repo}/pulls/{pull_number}/files';
+export const REVIEW_GET_PULL_ROUTE = 'GET /repos/{owner}/{repo}/pulls/{pull_number}';
 export const REVIEW_MODEL = 'openai/gpt-5';
 export const REVIEW_TEMPERATURE = 0.1;
 export const REVIEW_MAX_OUTPUT_TOKENS = 3000;
 export const REVIEW_TIMEOUT_MS = 90_000;
 export const MIN_PR_TEXT_LENGTH = 1;
 export const REVIEW_UPDATE_PULL_ROUTE = 'PATCH /repos/{owner}/{repo}/pulls/{pull_number}';
+export const REVIEW_CREATE_REVIEW_ROUTE = 'POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews';
+export const REVIEW_EVENT_COMMENT = 'COMMENT';
 
 export enum ReviewSeverity {
   Low = 'low',
@@ -20,6 +23,7 @@ export const REVIEW_LOG_SKIP_PREFIX = '[analysis:skip]';
 export const REVIEW_LOG_DIFF_PREFIX = '[analysis:diff]';
 export const REVIEW_LOG_LLM_PREFIX = '[analysis:llm]';
 export const REVIEW_LOG_PARSE_ERROR_PREFIX = '[analysis:parse-error]';
+export const REVIEW_LOG_REVIEW_SUBMIT_PREFIX = '[analysis:review-submit]';
 
 export enum PullRequestEventType {
   Opened = 'pull_request.opened',

@@ -14,8 +14,8 @@ import {
 } from '../constants/github.constants.js';
 import {
   handlePullRequestEvent,
-  PullRequestPayload,
 } from './review.service.js';
+import { PullRequestPayload } from '../types/review.types.js';
 import { PullRequestEventType } from '../constants/review.constants.js';
 
 export async function createGitHubApp() {
