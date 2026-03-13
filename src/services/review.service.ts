@@ -39,6 +39,8 @@ const SKIPPED_FILE_PATTERNS = [
   /^build\//i,
 ] as const;
 
+console.log('hello ')
+
 const shouldSkipFile = (filename: string): boolean =>
   SKIPPED_FILE_PATTERNS.some((pattern) => pattern.test(filename));
 
