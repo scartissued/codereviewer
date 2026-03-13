@@ -28,6 +28,8 @@ type GenerateTextFn = (options: {
   abortSignal: AbortSignal;
 }) => Promise<{ text: string }>;
 
+console.log('hello')
+
 const MAX_PATCH_CHARS_PER_FILE = 6_000;
 const MAX_PATCH_CHARS_TOTAL = 24_000;
 const SKIPPED_FILE_PATTERNS = [
