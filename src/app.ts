@@ -33,8 +33,8 @@ if (env.nodeEnv !== 'test') {
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: env.rateLimitMax,
-  standardHeaders: 'draft-7',
+  limit: env.rateLimitMax,
+  standardHeaders: 'draft-8',
   legacyHeaders: false,
   message: {
     service: 'codereviewer',
