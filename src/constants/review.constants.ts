@@ -1,9 +1,9 @@
 export const REVIEW_FILES_ROUTE = 'GET /repos/{owner}/{repo}/pulls/{pull_number}/files';
 export const REVIEW_GET_PULL_ROUTE = 'GET /repos/{owner}/{repo}/pulls/{pull_number}';
-export const REVIEW_MODEL = 'alibaba/qwen3-next-80b-a3b-thinking';
+export const REVIEW_MODEL = 'moonshotai/kimi-k2';
 export const REVIEW_TEMPERATURE = 0.1;
 export const REVIEW_MAX_OUTPUT_TOKENS = 10000;
-export const REVIEW_TIMEOUT_MS = 90_000;
+export const REVIEW_TIMEOUT_MS = 120_000;
 export const MIN_PR_TEXT_LENGTH = 1;
 export const REVIEW_UPDATE_PULL_ROUTE = 'PATCH /repos/{owner}/{repo}/pulls/{pull_number}';
 export const REVIEW_CREATE_REVIEW_ROUTE = 'POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews';
