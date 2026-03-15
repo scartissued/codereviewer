@@ -10,6 +10,7 @@
     "build": "tsc -p tsconfig.json",
     "prestart": "npm run build",
     "start": "node dist/server.js",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "prepare": "husky"
   },
@@ -38,6 +39,7 @@
     "@types/node": "^22.15.0",
     "husky": "^9.1.7",
     "tsx": "^4.20.5",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vitest": "^3.2.4"
   }
 }
